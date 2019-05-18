@@ -1,0 +1,8 @@
+inherit_gem:
+  gc_ruboconfig: rubocop.yml
+
+Style/Semicolon:
+  Enabled: false
+
+Lint/AmbiguousBlockAssociation:
+  Enabled: false
