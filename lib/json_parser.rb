@@ -7,6 +7,18 @@ class JsonParser < Parser
     json_value
   end
 
+  def json_value
+    skip_spaces
+    one_of [
+      method(:object),
+      method(:array),
+      method(:quoted_string),
+      method(:boolean),
+      method(:null),
+      method(:number),
+    ]
+  end
+
   def object
     inner = proc do
       skip_spaces
@@ -17,18 +29,6 @@ class JsonParser < Parser
     between proc { string "{" },
             proc { string "}" },
             inner
-  end
-
-  # An object, array, string, boolean or number
-  def json_value
-    one_of [
-      method(:object),
-      method(:array),
-      method(:quoted_string),
-      method(:boolean),
-      method(:null),
-      method(:number),
-    ]
   end
 
   def null
@@ -53,7 +53,7 @@ class JsonParser < Parser
   def number
     result = integer
     decimals = optional(proc { string "."; integer })
-    exponent = optional(proc { string "e"; integer })
+    exponent = optional(proc { either(proc { string "e" }, proc { string "E" }); integer })
 
     result = result.to_f if decimals || exponent
     result += (decimals.to_f / (10**decimals.to_s.length)) if decimals

@@ -9,12 +9,11 @@ class Parser
   end
 
   def optional(parser)
-    match = backtrack { parser.call }
+    backtrack { parser.call }
   rescue ParseFailure
-    match
+    nil
   end
 
-  # rubocop:disable Lint/HandleExceptions
   def at_least_one(parser)
     first = parser.call
     rest = zero_or_more(parser)
@@ -23,15 +22,11 @@ class Parser
 
   def zero_or_more(parser)
     matches = []
-    begin
-      loop do
-        matches << backtrack { parser.call }
-      end
-    rescue ParseFailure
-    end
+    loop { matches << backtrack { parser.call } }
+    matches
+  rescue ParseFailure
     matches
   end
-  # rubocop:enable Lint/HandleExceptions
 
   def sep_by(separator, parser)
     first = begin
@@ -66,11 +61,11 @@ class Parser
   end
 
   def string(pat)
-    if input.start_with?(pat)
-      take(pat.length)
-    else
-      actual = input.byteslice(0, pat.length)
-      fail(pat, actual)
+    backtrack do
+      s = take(pat.length)
+      fail(s, pat) unless s == pat
+
+      s
     end
   end
 
@@ -84,8 +79,22 @@ class Parser
     match
   end
 
+  # This was originally defined as follows
+  #   def take_while(pred)
+  #     input.chars.take_while(&pred).join.tap { |match| consume(match.length) }
+  #   end
+  # but the following definition, while less readable, is about 30x faster
   def take_while(pred)
-    input.chars.take_while(&pred).join.tap { |match| consume(match.length) }
+    take_matching = proc do
+      c = take 1
+      pred.call(c) ? c : (raise ParseFailure)
+    end
+
+    str = +""
+    loop { str << backtrack { take_matching.call } }
+    str
+  rescue ParseFailure
+    str
   end
 
   def between(open, close, inner)
@@ -96,7 +105,7 @@ class Parser
   end
 
   def fail(expected, actual)
-    raise ParseFailure, "expected #{expected.inspect}, but saw #{actual.inspect} (#{@loc})"
+    raise ParseFailure, "expected #{expected.inspect} but saw #{actual.inspect} (#{@loc})"
   end
 
   # Return the next character of input without consuming it
