@@ -27,7 +27,7 @@ RSpec.describe JsonParser do
     end
   end
 
-  Dir.glob("JSONTestSuite/test_parsing/y_*.json").first(50).each do |file|
+  Dir.glob("fixtures/y_*.json").each do |file|
     input = File.read(file)
     it file do
       expect(parse(input)).to eq(JSON.parse(input))
