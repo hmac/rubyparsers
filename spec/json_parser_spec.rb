@@ -10,6 +10,7 @@ RSpec.describe JsonParser do
 
   table = [
     ["{}", {}],
+    ["null", nil],
     ["[]", []],
     ['{"a": "b"}', { "a" => "b" }],
     ['{"a": null}', { "a" => nil }],

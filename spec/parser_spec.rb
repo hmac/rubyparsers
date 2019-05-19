@@ -41,6 +41,39 @@ RSpec.describe Parser do
     end
   end
 
+  describe "#sep_by" do
+    let(:sep) { proc { parser.string(",") } }
+    let(:input) { "a,b,c" }
+    let(:parser) { described_class.new(input) }
+
+    it "returns each match of the parser, separated by the separator" do
+      expect(parser.sep_by(sep, proc { parser.take(1) })).to eq(%w[a b c])
+    end
+
+    context "when the parser only matches once, at the start of the input" do
+      let(:input) { "a" }
+      it "returns that match" do
+        expect(parser.sep_by(sep, proc { parser.take(1) })).to eq(["a"])
+      end
+    end
+
+    context "when the separator does not match" do
+      let(:input) { "a-b-c" }
+      it "returns the first match only" do
+        expect(parser.sep_by(sep, proc { parser.take(1) })).to eq(["a"])
+      end
+    end
+  end
+
+  describe "#between" do
+    let(:open) { proc { parser.string("h") } }
+    let(:close) { proc { parser.string("l") } }
+
+    it "parses the open and close on either side of the parser" do
+      expect(parser.between(open, close, proc { parser.string("e") })).to eq("e")
+    end
+  end
+
   describe "#either" do
     it "succeeds if the first parser succeeds" do
       p1 = proc { parser.string("h") }
