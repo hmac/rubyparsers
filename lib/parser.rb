@@ -23,7 +23,6 @@ class Parser
   def zero_or_more(parser)
     matches = []
     loop { matches << backtrack { parser.call } }
-    matches
   rescue ParseFailure
     matches
   end
